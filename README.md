@@ -1,22 +1,20 @@
-Mobly Bundled Snippets is a set of Snippets to allow Mobly tests to control
-Android devices by exposing a simplified version of the public Android API
-suitable for testing.
-
-We are adding more APIs as we go. If you have specific needs for certain groups
-of APIs, feel free to file a request in [Issues](https://github.com/google/mobly-bundled-snippets/issues).
-
-Note: this is not an official Google product.
-
-
 ## Usage
 
-1.  Compile and install the bundled snippets
+1. Install mobly and clone mobly bundled snippets
+  
+        pip install mobly
+        git clone https://github.com/google/mobly-bundled-snippets.git
 
+2.  Compile and install the bundled snippets
+
+        cd mobly-bundled-snippets
         ./gradlew assembleDebug
         adb install -d -r -g ./build/outputs/apk/debug/mobly-bundled-snippets-debug.apk
 
-1.  Use the Mobly snippet shell to interact with the bundled snippets
+3.  Use the Mobly snippet shell to interact with the bundled snippets
 
+        pip uninstall pyreadline
+        pip install pyreadline3
         snippet_shell.py com.google.android.mobly.snippet.bundled
         >>> print(s.help())
         Known methods:
@@ -26,44 +24,68 @@ Note: this is not an official Google product.
           wifiEnable() returns void  // Turns on Wi-Fi with a 30s timeout.
         ...
 
-1.  To use these snippets within Mobly tests, load it on your AndroidDevice objects
+4.  To use these snippets within Mobly tests, load it on your AndroidDevice objects
     after registering android_device module:
+    `python mobly-test.py -c config.yaml`
 
-    ```python
-    def setup_class(self):
-      self.ad = self.register_controllers(android_device, min_number=1)[0]
-      self.ad.load_snippet('api', 'com.google.android.mobly.snippet.bundled')
-
-    def test_enable_wifi(self):
-      self.ad.api.wifiEnable()
+    ```yaml
+    TestBeds:
+    - Name: SampleTestBed
+      Controllers:
+          AndroidDevice: '*'
+      TestParams:
+          favorite_food: Green eggs and ham.
     ```
+    ```python
+    import logging
+    import pprint
 
-## Develop
+    from mobly import asserts
+    from mobly import base_test
+    from mobly import test_runner
+    from mobly.controllers import android_device
+    import time
 
-If you want to contribute, use the usual github method of forking and sending
-a pull request.
+    # Number of seconds for the target to stay discoverable on Bluetooth.
+    SCAN_TIME = 60
 
-Before sending a pull request, run the `presubmit` target to format and run
-lint over the code. Fix any issues it indicates. When complete, send the pull
-request.
+    class HelloWorldTest(base_test.BaseTestClass):
+        def setup_class(self):
+            self.ads = self.register_controller(android_device, min_number=1)
+            # The device that is expected to be discovered
+            self.target = android_device.get_device(self.ads)
+            self.target.debug_tag = 'target'
+            self.target.load_snippet('mbs', android_device.MBS_PACKAGE)
 
-```shell
-./gradlew presubmit
-```
 
-This target will reformat the code with
-[googleJavaFormat](https://github.com/sherter/google-java-format-gradle-plugin)
-and run lint. The lint report should open in your default browser.
+        def setup_test(self):
+            # Make sure bluetooth is on.
+            self.target.mbs.btEnable()
+            # Set Bluetooth name on target device.
+            self.target.mbs.btSetName('LookForMe!')
 
-Be sure to address *all* off the errors reported by lint. When finished and you
-run `presubmit` one last time you should see:
+        def test_scan(self):
+            callbackId = "scanCallback"
+            eventId = "onScanResult"
+            target_name = self.target.mbs.btGetName()
+            self.target.log.info('Scan for %ds with name "%s"',
+                                SCAN_TIME, target_name)
 
-> No Issues Found
->   Congratulations!
+            callback = self.target.mbs.bleStartScan(callbackId=callbackId, scanFilters=None, scanSettings=None)
+            start_time = time.time()
+            while time.time() - start_time < SCAN_TIME:
+                output = callback.callEventWaitAndGetRpc(callback.callback_id, eventId, 10)
+                print(output)
 
-in your browser.
+            time.sleep(5)
+            
+            self.target.mbs.bleStopScan(callback.callback_id)
 
-## Other resources
+        def teardown_test(self):
+            # Turn Bluetooth off on both devices after test finishes.
+            self.target.mbs.btDisable()
 
-  * [Mobly multi-device test framework](http://github.com/google/mobly)
-  * [Mobly Snippet Lib](http://github.com/google/mobly-snippet-lib)
+
+    if __name__ == '__main__':
+        test_runner.main()
+    ```

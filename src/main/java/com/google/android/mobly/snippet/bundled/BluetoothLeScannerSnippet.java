@@ -36,8 +36,10 @@ import com.google.android.mobly.snippet.rpc.Rpc;
 import com.google.android.mobly.snippet.rpc.RpcMinSdk;
 import com.google.android.mobly.snippet.rpc.RpcOptional;
 import com.google.android.mobly.snippet.util.Log;
+import android.os.ParcelUuid;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -146,6 +148,23 @@ public class BluetoothLeScannerSnippet implements Snippet {
             mCallbackId = callbackId;
         }
 
+        public boolean isFastPairDevice(Map<ParcelUuid, byte[]> serviceData) {
+            if (serviceData == null || serviceData.isEmpty()) {
+                return false;
+            }
+
+            for (ParcelUuid puuid : serviceData.keySet()) {
+                ParcelUuid uuid = puuid;
+                final long BOSE_FASTPAIR_MSB = 0xFE2C;
+                // Support BOSE Fast Pair Device
+                if ((uuid.getUuid().getMostSignificantBits() >> 32) == BOSE_FASTPAIR_MSB) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             Log.i("Got Bluetooth LE scan result.");
@@ -153,11 +172,14 @@ public class BluetoothLeScannerSnippet implements Snippet {
             SnippetEvent event = new SnippetEvent(mCallbackId, "onScanResult");
             String callbackTypeString =
                     MbsEnums.BLE_SCAN_RESULT_CALLBACK_TYPE.getString(callbackType);
-            event.getData().putString("CallbackType", callbackTypeString);
-            event.getData().putBundle("result", mJsonSerializer.serializeBleScanResult(result));
-            event.getData()
-                    .putLong("StartToResultTimeDeltaMs", bleScanOnResultTime - bleScanStartTime);
-            mEventCache.postEvent(event);
+            if (isFastPairDevice(result.getScanRecord().getServiceData())) {
+                Log.i("Sending scan results" + result);
+                event.getData().putString("CallbackType", callbackTypeString);
+                event.getData().putBundle("result", mJsonSerializer.serializeBleScanResult(result));
+                event.getData()
+                        .putLong("StartToResultTimeDeltaMs", bleScanOnResultTime - bleScanStartTime);
+                mEventCache.postEvent(event);
+            }
         }
 
         @Override
