@@ -3,7 +3,7 @@
 1. Install mobly and clone mobly bundled snippets
   
         pip install mobly
-        git clone https://github.com/google/mobly-bundled-snippets.git
+        git clone https://github.com/Thomas-Campion-Bose/mobly-bundled-snippets.git
 
 2.  Compile and install the bundled snippets
 
