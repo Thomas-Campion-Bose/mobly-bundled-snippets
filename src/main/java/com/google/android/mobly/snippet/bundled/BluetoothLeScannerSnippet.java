@@ -36,8 +36,10 @@ import com.google.android.mobly.snippet.rpc.Rpc;
 import com.google.android.mobly.snippet.rpc.RpcMinSdk;
 import com.google.android.mobly.snippet.rpc.RpcOptional;
 import com.google.android.mobly.snippet.util.Log;
+import android.os.ParcelUuid;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -153,6 +155,7 @@ public class BluetoothLeScannerSnippet implements Snippet {
             SnippetEvent event = new SnippetEvent(mCallbackId, "onScanResult");
             String callbackTypeString =
                     MbsEnums.BLE_SCAN_RESULT_CALLBACK_TYPE.getString(callbackType);
+            Log.i("Sending scan results" + result);
             event.getData().putString("CallbackType", callbackTypeString);
             event.getData().putBundle("result", mJsonSerializer.serializeBleScanResult(result));
             event.getData()

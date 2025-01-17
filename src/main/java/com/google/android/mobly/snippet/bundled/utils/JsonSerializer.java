@@ -190,7 +190,7 @@ public class JsonSerializer {
         Bundle result = new Bundle();
         result.putString("DeviceName", record.getDeviceName());
         result.putInt("TxPowerLevel", record.getTxPowerLevel());
-        result.putParcelableArrayList("Services", serializeBleScanServices(record));
+        result.putBundle("ServiceData", serializeBleScanServices(record));
         result.putBundle(
             "manufacturerSpecificData", serializeBleScanManufacturerSpecificData(record));
         return result;
@@ -198,24 +198,15 @@ public class JsonSerializer {
 
     /** Serialize manufacturer specific data from ScanRecord for Bluetooth LE. */
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private ArrayList<Bundle> serializeBleScanServices(ScanRecord record) {
-        ArrayList<Bundle> result = new ArrayList<>();
-        if (record.getServiceUuids() != null) {
-            for (ParcelUuid uuid : record.getServiceUuids()) {
-                Bundle service = new Bundle();
-                service.putString("UUID", uuid.getUuid().toString());
-                if (record.getServiceData(uuid) != null) {
-                    service.putString(
-                            "Data",
-                            new String(Base64.encode(record.getServiceData(uuid), Base64.NO_WRAP),
-                                      UTF_8));
-                } else {
-                    service.putString("Data", "");
-                }
-                result.add(service);
+    private Bundle serializeBleScanServices(ScanRecord record) {
+        Bundle serviceDataBundle = new Bundle();
+        if (record.getServiceData() != null) {
+            for (ParcelUuid uuid : record.getServiceData().keySet()) {
+                byte[] data = record.getServiceData().get(uuid);
+                serviceDataBundle.putByteArray(uuid.toString(), data);
             }
         }
-        return result;
+        return serviceDataBundle;
     }
 
     /** Serialize manufacturer specific data from ScanRecord for Bluetooth LE. */
