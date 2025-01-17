@@ -99,3 +99,21 @@
     if __name__ == '__main__':
         test_runner.main()
     ```
+
+## Debugging Workflow Summary
+
+1. **Run Python Test**: The Python test invokes the `load_snippet` function, which starts the RPC server on the Android device.
+2. **Attach ADB Debugger**: Once the server is running, use ADB to attach to the snippet process on the Android device.
+3. **Set Breakpoints**: In the Android-side code (within the snippet), set breakpoints where needed to inspect or troubleshoot issues.
+4. **Continue Python Execution**: The Python test execution continues normally, unaffected by breakpoints in the Android-side code, unless the test is waiting for a callback event.
+5. **Inspect and Debug**: Step through the Android-side code and observe the test execution. Once you’ve identified the issue, you can resolve it and continue testing.
+
+---
+
+## Troubleshooting Tips
+
+- **Check RPC Server Status**: Ensure that the RPC server is up and running by checking Android logs (`adb logcat`) or verifying that the RPC server was successfully initialized.
+- **Synchronization Issues**: If you encounter issues where the Python test is not progressing as expected, ensure that the callbacks or asynchronous events on the Android side are being handled correctly. Consider adding additional logging or breakpoints to inspect the event flow.
+- **Use Logging**: In addition to breakpoints, leverage Android logging (via `Log.d`, `Log.e`, etc.) to track the flow of snippet execution and pinpoint where issues may arise.
+- **Ensure Device is Awake**: A portion of the logic involves coordinating screen interactions, which cannot be done if the screen is off.
+- **Ensure Proper Permissions**: Some of the Android APIs require permissions granted by the user or in `Manifest.xml`. Ensure that the device/project is configured correctly.
