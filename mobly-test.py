@@ -44,10 +44,7 @@ class HelloWorldTest(base_test.BaseTestClass):
         while time.time() - start_time < SCAN_TIME:
             output = callback.callEventWaitAndGetRpc(callback.callback_id, eventId, 10)
             result = output["data"]["result"]
-            print(result)
-            if len(result["ScanRecord"]["Services"]):
-                print(result["ScanRecord"]["Services"])
-            adv_raw = output
+            adv_raw = result["ScanRecord"]
             # Get raw advertisement data - GFP
             #parsed_data = get_parsed_adv_data(adv_raw, logger)
             #logger.info(f'Parsed advertising response: {parsed_data}')

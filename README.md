@@ -4,17 +4,27 @@
   
         pip install mobly
         git clone https://github.com/Thomas-Campion-Bose/mobly-bundled-snippets.git
+        Required for Python < 3.11:
+            pip uninstall pyreadline
+            pip install pyreadline3
 
 2.  Compile and install the bundled snippets
 
-        cd mobly-bundled-snippets
-        ./gradlew assembleDebug
-        adb install -d -r -g ./build/outputs/apk/debug/mobly-bundled-snippets-debug.apk
+        Requires gradle:
+            cd mobly-bundled-snippets
+            ./gradlew assembleDebug
+            adb install -d -r -g ./build/outputs/apk/debug/mobly-bundled-snippets-debug.apk
+
+        Alternative (easier):
+            Download Android Studio (https://developer.android.com/studio)
+            Open mobly-bundled-snippets in Android Studio
+            Run Module Make (Hammer icon top-right) 
+                This will take a minute or two while it downloads necessary gradle/Android SDK verions
+                Also there will be a lot of warnings you can ignore
+            Install on Android device (Debug icon top-middle)
 
 3.  Use the Mobly snippet shell to interact with the bundled snippets
 
-        pip uninstall pyreadline
-        pip install pyreadline3
         snippet_shell.py com.google.android.mobly.snippet.bundled
         >>> print(s.help())
         Known methods:
